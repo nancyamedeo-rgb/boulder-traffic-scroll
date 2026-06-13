@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boulder / Denver Traffic — Live</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #111213;
+    --bg-hover: #1e2023;
+    --border: rgba(255,255,255,0.08);
+    --border-mid: rgba(255,255,255,0.14);
+    --text-primary: #e8e8e8;
+    --text-secondary: #999;
+    --text-dim: #555;
+    --red:    #c94040;
+    --amber:  #c97b1a;
+    --purple: #7065c4;
+    --teal:   #1e9070;
+    --blue:   #3d80c4;
+    --gray:   #525252;
+    --info:   #3d80c4;
+  }
+  html, body {
+    height: 100%; background: var(--bg); color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 24px; line-height: 1.4; -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  #widget { display: flex; flex-direction: column; height: 100vh; max-width: 640px; margin: 0 auto; }
+
+  /* Header */
+  #header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px 12px; border-bottom: 0.5px solid var(--border); flex-shrink: 0;
+  }
+  #header-left { display: flex; align-items: center; gap: 12px; }
+  #header h1 { font-size: 18px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; }
+  .badge { font-size: 13px; font-weight: 700; letter-spacing: 0.05em; padding: 3px 10px; border-radius: 99px; }
+  .badge-cdot { background: rgba(61,128,196,0.18); color: #7ab4e8; border: 0.5px solid rgba(61,128,196,0.35); }
+  #refresh-btn {
+    display: flex; align-items: center; gap: 6px; font-size: 14px;
+    color: var(--text-secondary); background: none;
+    border: 0.5px solid var(--border-mid); border-radius: 6px; padding: 5px 12px; cursor: pointer;
+  }
+  #refresh-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+  /* Airport banner */
+  #airport-bar {
+    display: flex; align-items: center; gap: 10px; padding: 8px 20px;
+    border-bottom: 0.5px solid var(--border); flex-shrink: 0; flex-wrap: wrap;
+  }
+  #airport-label { font-size: 13px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+  #airport-status {
+    font-size: 14px; font-weight: 600; padding: 3px 12px; border-radius: 99px;
+    border: 0.5px solid var(--border-mid); letter-spacing: 0.03em;
+  }
+  #airport-status.good    { background: rgba(30,144,112,0.18); color: #6dcaaa; border-color: rgba(30,144,112,0.35); }
+  #airport-status.delay   { background: rgba(201,123,26,0.18); color: #e8a060; border-color: rgba(201,123,26,0.35); }
+  #airport-status.ground  { background: rgba(201,64,64,0.18);  color: #e88;    border-color: rgba(201,64,64,0.35); }
+  #airport-status.loading { background: transparent; color: var(--text-dim); }
+  #airport-detail { font-size: 13px; color: var(--text-secondary); flex: 1; }
+
+  /* Filter bar */
+  #filter-bar {
+    display: flex; gap: 6px; padding: 9px 20px;
+    border-bottom: 0.5px solid var(--border); flex-wrap: wrap; flex-shrink: 0;
+  }
+  .fchip {
+    font-size: 14px; font-weight: 500; padding: 4px 13px; border-radius: 99px;
+    border: 0.5px solid var(--border-mid); color: var(--text-secondary);
+    background: none; cursor: pointer; transition: all 0.15s; letter-spacing: 0.03em;
+  }
+  .fchip:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.25); }
+  .fchip.active { color: #fff; border-color: transparent; }
+  .fchip.active[data-cat="all"]          { background: rgba(255,255,255,0.12); }
+  .fchip.active[data-cat="accident"]     { background: rgba(201,64,64,0.35);   color: #e88; }
+  .fchip.active[data-cat="hazard"]       { background: rgba(201,123,26,0.35);  color: #e8a060; }
+  .fchip.active[data-cat="congestion"]   { background: rgba(112,101,196,0.35); color: #a89ee0; }
+  .fchip.active[data-cat="construction"] { background: rgba(30,144,112,0.35);  color: #6dcaaa; }
+  .fchip.active[data-cat="weather"]      { background: rgba(61,128,196,0.35);  color: #7ab4e8; }
+  .fchip.active[data-cat="other"]        { background: rgba(82,82,82,0.4);     color: #aaa; }
+
+  /* Status bar */
+  #status-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 20px; border-bottom: 0.5px solid var(--border); flex-shrink: 0;
+  }
+  #record-count { font-size: 12px; color: var(--text-dim); }
+  #data-lag { font-size: 12px; color: var(--text-dim); font-style: italic; }
+
+  /* Ticker viewport */
+  #ticker-wrap { flex: 1; position: relative; overflow: hidden; }
+  #ticker-wrap::before, #ticker-wrap::after {
+    content: ''; position: absolute; left: 0; right: 0; z-index: 2; pointer-events: none; height: 60px;
+  }
+  #ticker-wrap::before { top: 0;    background: linear-gradient(to bottom, var(--bg), transparent); }
+  #ticker-wrap::after  { bottom: 0; background: linear-gradient(to top,   var(--bg), transparent); }
+  #ticker-inner { position: absolute; top: 0; left: 0; right: 0; will-change: transform; }
+
+  /* Incident rows */
+  .incident {
+    display: grid; grid-template-columns: 4px 1fr auto;
+    gap: 0 14px; align-items: start;
+    padding: 16px 20px; border-bottom: 0.5px solid var(--border);
+  }
+  .incident:last-child { border-bottom: none; }
+  .dot { align-self: stretch; min-height: 26px; border-radius: 2px; width: 4px; margin-top: 3px; }
+  .dot.accident     { background: var(--red); }
+  .dot.hazard       { background: var(--amber); }
+  .dot.congestion   { background: var(--purple); }
+  .dot.construction { background: var(--teal); }
+  .dot.weather      { background: var(--blue); }
+  .dot.other        { background: var(--gray); }
+  .inc-type { font-size: 24px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; line-height: 1.25; }
+  .inc-meta { font-size: 18px; color: var(--text-secondary); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .inc-meta i { font-size: 15px; }
+  .inc-detail { font-size: 16px; color: var(--text-secondary); margin-top: 5px; line-height: 1.5; font-style: italic; }
+  .inc-date { font-size: 17px; color: var(--text-dim); white-space: nowrap; padding-top: 3px; text-align: right; }
+
+  #empty-state {
+    padding: 50px 20px; text-align: center; color: var(--text-secondary);
+    font-size: 20px; display: flex; flex-direction: column; align-items: center; gap: 12px;
+  }
+
+  /* Footer */
+  #footer {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 20px; border-top: 0.5px solid var(--border); flex-shrink: 0;
+  }
+  #updated { font-size: 13px; color: var(--text-dim); }
+  .foot-link { font-size: 13px; color: var(--info); text-decoration: none; display: flex; align-items: center; gap: 4px; opacity: 0.75; }
+  .foot-link:hover { opacity: 1; text-decoration: underline; }
+
+  #pause-badge {
+    position: absolute; top: 10px; right: 14px; z-index: 10;
+    font-size: 12px; color: var(--text-dim);
+    background: rgba(0,0,0,0.5); border: 0.5px solid var(--border-mid);
+    padding: 2px 8px; border-radius: 99px;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  #pause-badge.visible { opacity: 1; }
+
+  .spin { animation: spin 1s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div id="widget">
+  <div id="header">
+    <div id="header-left">
+      <i class="ti ti-road" style="font-size:17px;color:#666;" aria-hidden="true"></i>
+      <h1>Boulder / Denver Traffic</h1>
+      <span class="badge badge-cdot">CDOT</span>
+    </div>
+    <button id="refresh-btn" onclick="doRefresh()">
+      <i class="ti ti-refresh" id="refresh-icon" style="font-size:12px;" aria-hidden="true"></i>Refresh
+    </button>
+  </div>
+
+  <div id="airport-bar">
+    <span id="airport-label"><i class="ti ti-plane" style="font-size:13px;"></i> DEN</span>
+    <span id="airport-status" class="loading">Loading…</span>
+    <span id="airport-detail"></span>
+  </div>
+
+  <div id="filter-bar">
+    <button class="fchip active" data-cat="all"          onclick="setFilter(this,'all')">All</button>
+    <button class="fchip"        data-cat="accident"     onclick="setFilter(this,'accident')">Accident</button>
+    <button class="fchip"        data-cat="hazard"       onclick="setFilter(this,'hazard')">Hazard</button>
+    <button class="fchip"        data-cat="congestion"   onclick="setFilter(this,'congestion')">Congestion</button>
+    <button class="fchip"        data-cat="construction" onclick="setFilter(this,'construction')">Construction</button>
+    <button class="fchip"        data-cat="weather"      onclick="setFilter(this,'weather')">Weather</button>
+    <button class="fchip"        data-cat="other"        onclick="setFilter(this,'other')">Other</button>
+  </div>
+
+  <div id="status-bar">
+    <span id="record-count">Loading…</span>
+    <span id="data-lag">COtrip live feed</span>
+  </div>
+
+  <div id="ticker-wrap">
+    <div id="pause-badge">⏸ paused</div>
+    <div id="ticker-inner">
+      <div id="empty-state"><i class="ti ti-loader spin" style="font-size:26px;"></i> Loading…</div>
+    </div>
+  </div>
+
+  <div id="footer">
+    <span id="updated"></span>
+    <a class="foot-link" href="https://www.cotrip.org/list/events" target="_blank">
+      COtrip live events <i class="ti ti-external-link" style="font-size:11px;"></i>
+    </a>
+  </div>
+</div>
+
+<script>
+// ── Configuration ─────────────────────────────────────────────────────────
+// COtrip API key — the key is sent as a query param per CDOT docs
+var COTRIP_KEY = 'RSP3STM-AB0M1TW-HE3P63Q-TBVEETK';
+
+// COtrip REST API — events feed filtered to the Boulder/Denver/I-25 corridor
+// Bounding box: SW corner (38.8,-105.5) NE corner (40.4,-104.6) covers Boulder, Denver, I-70, I-25
+var COTRIP_EVENTS_URL = 'https://data.cotrip.org/api/v1/events?apiKey=' + COTRIP_KEY;
+var COTRIP_PROXY = 'https://corsproxy.io/?' + encodeURIComponent(COTRIP_EVENTS_URL);
+
+// FAA ASWS — no key needed
+var FAA_URL = 'https://services.faa.gov/airport/status/DEN?format=application/json';
+var FAA_PROXY = 'https://corsproxy.io/?' + encodeURIComponent(FAA_URL);
+
+// Bounding box for Boulder/Denver metro (used to filter COtrip results)
+var BBOX = { minLat: 38.8, maxLat: 40.4, minLon: -105.5, maxLon: -104.6 };
+
+// ── State ─────────────────────────────────────────────────────────────────
+var incidents    = [];
+var activeFilter = 'all';
+var loading      = false;
+var tickerY      = 0;
+var tickerSpeed  = 40;
+var tickerPaused = false;
+var lastTime     = null;
+var rafId        = null;
+var totalH       = 0;
+
+// ── Categorize ────────────────────────────────────────────────────────────
+function categorize(type) {
+  if (!type) return 'other';
+  var u = type.toUpperCase();
+  if (/ACCIDENT|CRASH|COLLISION/.test(u))         return 'accident';
+  if (/WEATHER|WIND|SNOW|ICE|FLOOD|FOG|ADVISO/.test(u)) return 'weather';
+  if (/HAZARD|DEBRIS|OBSTACLE|SPILL|ANIMAL|DISABLE|CHAIN|FIRE/.test(u)) return 'hazard';
+  if (/CONGESTION|TRAFFIC|SLOW|JAM|DELAY|HEAVY/.test(u)) return 'congestion';
+  if (/CONSTRUCTION|WORK|CLOSURE|CLOSED|MAINTENANCE|ROAD WORK/.test(u)) return 'construction';
+  return 'other';
+}
+
+// ── Formatting ────────────────────────────────────────────────────────────
+function fmtDate(str) {
+  if (!str) return '';
+  var d = new Date(str);
+  if (isNaN(d)) return '';
+  var diff = Date.now() - d;
+  if (diff < 3600000)  return Math.floor(diff / 60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+  return Math.floor(diff / 86400000) + 'd ago';
+}
+function titleCase(s) {
+  if (!s) return '';
+  return s.toLowerCase().replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+}
+function inBbox(lat, lon) {
+  return lat >= BBOX.minLat && lat <= BBOX.maxLat && lon >= BBOX.minLon && lon <= BBOX.maxLon;
+}
+
+// ── Ticker ────────────────────────────────────────────────────────────────
+function tickerFrame(ts) {
+  if (!tickerPaused && lastTime !== null) {
+    tickerY -= tickerSpeed * (ts - lastTime) / 1000;
+    var halfH = totalH / 2;
+    if (halfH > 0 && -tickerY >= halfH) tickerY += halfH;
+    document.getElementById('ticker-inner').style.transform = 'translateY(' + tickerY + 'px)';
+  }
+  lastTime = ts;
+  rafId = requestAnimationFrame(tickerFrame);
+}
+function startTicker() {
+  if (rafId) cancelAnimationFrame(rafId);
+  tickerY = 0; lastTime = null;
+  rafId = requestAnimationFrame(tickerFrame);
+}
+function pauseTicker(on) {
+  tickerPaused = on; lastTime = null;
+  document.getElementById('pause-badge').classList.toggle('visible', on);
+}
+window.addEventListener('DOMContentLoaded', function() {
+  var w = document.getElementById('ticker-wrap');
+  w.addEventListener('mouseenter', function() { pauseTicker(true); });
+  w.addEventListener('mouseleave', function() { pauseTicker(false); });
+  w.addEventListener('click',      function() { pauseTicker(!tickerPaused); });
+});
+
+// ── Render ────────────────────────────────────────────────────────────────
+function render() {
+  var shown = activeFilter === 'all'
+    ? incidents
+    : incidents.filter(function(i) { return i.cat === activeFilter; });
+  var inner = document.getElementById('ticker-inner');
+  if (!shown.length) {
+    inner.innerHTML = '<div id="empty-state">' +
+      (loading ? '<i class="ti ti-loader spin" style="font-size:26px;"></i> Loading…' : 'No active incidents for this filter.') +
+      '</div>';
+    totalH = 0; return;
+  }
+  var rowsHTML = shown.map(function(inc) {
+    var type   = inc.type   ? titleCase(inc.type)   : 'Unknown';
+    var road   = inc.road   ? inc.road               : '';
+    var detail = inc.detail ? titleCase(inc.detail)  : '';
+    return '<div class="incident">' +
+      '<div class="dot ' + inc.cat + '"></div>' +
+      '<div>' +
+        '<div class="inc-type">' + type + '</div>' +
+        '<div class="inc-meta">' +
+          (road ? '<span><i class="ti ti-road" aria-hidden="true"></i> ' + road + '</span>' : '') +
+        '</div>' +
+        (detail && detail !== type ? '<div class="inc-detail">' + detail + '</div>' : '') +
+      '</div>' +
+      '<div class="inc-date">' + fmtDate(inc.date) + '</div>' +
+    '</div>';
+  }).join('');
+  inner.innerHTML = rowsHTML + rowsHTML;
+  requestAnimationFrame(function() {
+    totalH = inner.scrollHeight;
+    tickerY = 0; lastTime = null;
+    startTicker();
+  });
+}
+
+function setFilter(btn, cat) {
+  activeFilter = cat;
+  document.querySelectorAll('.fchip').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  render();
+}
+
+// ── Parse COtrip JSON response ─────────────────────────────────────────────
+function parseCotrip(data) {
+  // COtrip REST API returns { events: [...] } or array directly
+  var events = Array.isArray(data) ? data : (data.events || data.Features || data.features || []);
+  return events
+    .filter(function(e) {
+      // Filter to Boulder/Denver bounding box if coordinates present
+      var lat = e.latitude  || (e.geometry && e.geometry.coordinates && e.geometry.coordinates[1]);
+      var lon = e.longitude || (e.geometry && e.geometry.coordinates && e.geometry.coordinates[0]);
+      if (lat && lon) return inBbox(parseFloat(lat), parseFloat(lon));
+      // If no coords, include if description mentions relevant areas
+      var desc = (e.description || e.headline || '').toUpperCase();
+      return /BOULDER|DENVER|I-25|I-70|US-36|CO-93|CO-119|BROOMFIELD|LONGMONT|ERIE|LAFAYETTE|LOUISVILLE|THORNTON|WESTMINSTER|ARVADA/.test(desc);
+    })
+    .map(function(e) {
+      var typeVal = e.type || e.eventType || e.headline || e.description || '';
+      var road    = e.road || e.roadway || e.location || e.headline || '';
+      var detail  = e.description || e.details || '';
+      var date    = e.created || e.updated || e.startTime || e.start || '';
+      return {
+        type:   typeVal,
+        road:   road,
+        detail: detail,
+        date:   date,
+        cat:    categorize(typeVal + ' ' + detail)
+      };
+    });
+}
+
+// ── Traffic loader ────────────────────────────────────────────────────────
+function loadTraffic() {
+  loading = true;
+  document.getElementById('record-count').textContent = 'Loading…';
+
+  // Try direct first (in case CDOT enables CORS), then proxy
+  var urls = [COTRIP_EVENTS_URL, COTRIP_PROXY];
+  var idx = 0;
+  function tryNext() {
+    if (idx >= urls.length) {
+      // Final fallback: COtrip XML feed via proxy (older API format)
+      var xmlUrl = 'https://data.cotrip.org/xml/alerts.xml?apiKey=' + COTRIP_KEY;
+      var xmlProxy = 'https://corsproxy.io/?' + encodeURIComponent(xmlUrl);
+      fetch(xmlProxy)
+        .then(function(r) { if (!r.ok) throw new Error(); return r.text(); })
+        .then(function(txt) { parseXmlFallback(txt); })
+        .catch(function() {
+          loading = false;
+          document.getElementById('record-count').textContent = 'COtrip data unavailable';
+          document.getElementById('refresh-icon').classList.remove('spin');
+          render();
+        });
+      return;
+    }
+    fetch(urls[idx++], { headers: { 'Accept': 'application/json' } })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(data) {
+        incidents = parseCotrip(data);
+        loading = false;
+        document.getElementById('record-count').textContent = incidents.length + ' active incidents';
+        document.getElementById('updated').textContent =
+          'Updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        document.getElementById('refresh-icon').classList.remove('spin');
+        render();
+      })
+      .catch(tryNext);
+  }
+  tryNext();
+}
+
+// ── XML fallback parser ────────────────────────────────────────────────────
+function parseXmlFallback(txt) {
+  try {
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(txt, 'application/xml');
+    var items = doc.querySelectorAll('alert, event, incident, item');
+    var result = [];
+    items.forEach(function(item) {
+      var getText = function(tag) {
+        var el = item.querySelector(tag);
+        return el ? el.textContent.trim() : '';
+      };
+      var typeVal = getText('type') || getText('eventType') || getText('headline') || getText('title') || '';
+      var road    = getText('road') || getText('roadway') || getText('location') || getText('headline') || '';
+      var detail  = getText('description') || getText('details') || getText('summary') || '';
+      var date    = getText('created') || getText('updated') || getText('pubDate') || '';
+      if (typeVal || road) {
+        result.push({ type: typeVal, road: road, detail: detail, date: date, cat: categorize(typeVal + ' ' + detail) });
+      }
+    });
+    incidents = result;
+    loading = false;
+    document.getElementById('record-count').textContent = incidents.length + ' active incidents';
+    document.getElementById('updated').textContent =
+      'Updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('refresh-icon').classList.remove('spin');
+    render();
+  } catch(e) {
+    loading = false;
+    document.getElementById('record-count').textContent = 'COtrip data unavailable';
+    document.getElementById('refresh-icon').classList.remove('spin');
+    render();
+  }
+}
+
+// ── Airport loader ────────────────────────────────────────────────────────
+function loadAirport() {
+  var el = document.getElementById('airport-status');
+  var detail = document.getElementById('airport-detail');
+  el.className = 'loading'; el.textContent = 'Loading…'; detail.textContent = '';
+  fetch(FAA_PROXY)
+    .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
+    .then(function(d) {
+      var hasDelay = d.delay === 'true' || d.delay === true;
+      if (!hasDelay) {
+        el.className = 'good'; el.textContent = '✓ No delays';
+        detail.textContent = d.weather && d.weather.weather ? d.weather.weather.Temp + ' · ' + d.weather.weather.Weather : '';
+      } else {
+        var reason = (d.status && d.status.reason) ? d.status.reason : 'Delay in effect';
+        var avg = (d.status && d.status.avgDelay) ? ' · avg ' + d.status.avgDelay : '';
+        el.className = 'delay'; el.textContent = '⚠ Delay';
+        detail.textContent = reason + avg;
+      }
+    })
+    .catch(function() {
+      fetch(FAA_URL)
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          var hasDelay = d.delay === 'true' || d.delay === true;
+          el.className = hasDelay ? 'delay' : 'good';
+          el.textContent = hasDelay ? '⚠ Delay' : '✓ No delays';
+          detail.textContent = hasDelay && d.status ? d.status.reason || '' : '';
+        })
+        .catch(function() {
+          el.className = 'loading'; el.textContent = 'DEN status unavailable';
+        });
+    });
+}
+
+function doRefresh() {
+  document.getElementById('refresh-icon').classList.add('spin');
+  incidents = []; render();
+  loadTraffic();
+  loadAirport();
+}
+
+loadTraffic();
+loadAirport();
+setInterval(loadTraffic, 300000);   // every 5 min
+setInterval(loadAirport, 600000);   // every 10 min
+</script>
+</body>
+</html>
