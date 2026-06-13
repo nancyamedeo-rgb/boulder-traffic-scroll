@@ -8,26 +8,16 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #111213;
-    --bg-hover: #1e2023;
-    --border: rgba(255,255,255,0.08);
-    --border-mid: rgba(255,255,255,0.14);
-    --text-primary: #e8e8e8;
-    --text-secondary: #999;
-    --text-dim: #555;
-    --red:    #c94040;
-    --amber:  #c97b1a;
-    --purple: #7065c4;
-    --teal:   #1e9070;
-    --blue:   #3d80c4;
-    --gray:   #525252;
-    --info:   #3d80c4;
+    --bg: #111213; --bg-hover: #1e2023;
+    --border: rgba(255,255,255,0.08); --border-mid: rgba(255,255,255,0.14);
+    --text-primary: #e8e8e8; --text-secondary: #999; --text-dim: #555;
+    --red: #c94040; --amber: #c97b1a; --purple: #7065c4;
+    --teal: #1e9070; --blue: #3d80c4; --gray: #525252; --info: #3d80c4;
   }
   html, body {
     height: 100%; background: var(--bg); color: var(--text-primary);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    font-size: 24px; line-height: 1.4; -webkit-font-smoothing: antialiased;
-    overflow: hidden;
+    font-size: 24px; line-height: 1.4; -webkit-font-smoothing: antialiased; overflow: hidden;
   }
   #widget { display: flex; flex-direction: column; height: 100vh; max-width: 640px; margin: 0 auto; }
 
@@ -57,10 +47,10 @@
     font-size: 14px; font-weight: 600; padding: 3px 12px; border-radius: 99px;
     border: 0.5px solid var(--border-mid); letter-spacing: 0.03em;
   }
-  #airport-status.good    { background: rgba(30,144,112,0.18); color: #6dcaaa; border-color: rgba(30,144,112,0.35); }
-  #airport-status.delay   { background: rgba(201,123,26,0.18); color: #e8a060; border-color: rgba(201,123,26,0.35); }
-  #airport-status.ground  { background: rgba(201,64,64,0.18);  color: #e88;    border-color: rgba(201,64,64,0.35); }
-  #airport-status.loading { background: transparent; color: var(--text-dim); }
+  #airport-status.good   { background: rgba(30,144,112,0.18); color: #6dcaaa; border-color: rgba(30,144,112,0.35); }
+  #airport-status.delay  { background: rgba(201,123,26,0.18); color: #e8a060; border-color: rgba(201,123,26,0.35); }
+  #airport-status.ground { background: rgba(201,64,64,0.18);  color: #e88;    border-color: rgba(201,64,64,0.35); }
+  #airport-status.loading{ background: transparent; color: var(--text-dim); }
   #airport-detail { font-size: 13px; color: var(--text-secondary); flex: 1; }
 
   /* Filter bar */
@@ -76,7 +66,7 @@
   .fchip:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.25); }
   .fchip.active { color: #fff; border-color: transparent; }
   .fchip.active[data-cat="all"]          { background: rgba(255,255,255,0.12); }
-  .fchip.active[data-cat="accident"]     { background: rgba(201,64,64,0.35);   color: #e88; }
+  .fchip.active[data-cat="crash"]        { background: rgba(201,64,64,0.35);   color: #e88; }
   .fchip.active[data-cat="hazard"]       { background: rgba(201,123,26,0.35);  color: #e8a060; }
   .fchip.active[data-cat="congestion"]   { background: rgba(112,101,196,0.35); color: #a89ee0; }
   .fchip.active[data-cat="construction"] { background: rgba(30,144,112,0.35);  color: #6dcaaa; }
@@ -108,17 +98,24 @@
   }
   .incident:last-child { border-bottom: none; }
   .dot { align-self: stretch; min-height: 26px; border-radius: 2px; width: 4px; margin-top: 3px; }
-  .dot.accident     { background: var(--red); }
+  .dot.crash        { background: var(--red); }
   .dot.hazard       { background: var(--amber); }
   .dot.congestion   { background: var(--purple); }
   .dot.construction { background: var(--teal); }
   .dot.weather      { background: var(--blue); }
   .dot.other        { background: var(--gray); }
-  .inc-type { font-size: 24px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; line-height: 1.25; }
-  .inc-meta { font-size: 18px; color: var(--text-secondary); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .inc-meta i { font-size: 15px; }
-  .inc-detail { font-size: 16px; color: var(--text-secondary); margin-top: 5px; line-height: 1.5; font-style: italic; }
-  .inc-date { font-size: 17px; color: var(--text-dim); white-space: nowrap; padding-top: 3px; text-align: right; }
+  .sev-badge {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;
+    padding: 1px 7px; border-radius: 99px; vertical-align: middle; margin-left: 6px;
+  }
+  .sev-major   { background: rgba(201,64,64,0.25);  color: #e88; }
+  .sev-minor   { background: rgba(201,123,26,0.2);  color: #e8a060; }
+  .inc-type    { font-size: 24px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; line-height: 1.25; }
+  .inc-meta    { font-size: 18px; color: var(--text-secondary); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .inc-meta i  { font-size: 15px; }
+  .inc-msg     { font-size: 16px; color: var(--text-secondary); margin-top: 5px; line-height: 1.5; font-style: italic; }
+  .inc-lanes   { font-size: 14px; color: #e88; margin-top: 3px; }
+  .inc-date    { font-size: 17px; color: var(--text-dim); white-space: nowrap; padding-top: 3px; text-align: right; }
 
   #empty-state {
     padding: 50px 20px; text-align: center; color: var(--text-secondary);
@@ -142,7 +139,6 @@
     opacity: 0; transition: opacity 0.3s; pointer-events: none;
   }
   #pause-badge.visible { opacity: 1; }
-
   .spin { animation: spin 1s linear infinite; display: inline-block; }
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
@@ -168,7 +164,7 @@
 
   <div id="filter-bar">
     <button class="fchip active" data-cat="all"          onclick="setFilter(this,'all')">All</button>
-    <button class="fchip"        data-cat="accident"     onclick="setFilter(this,'accident')">Accident</button>
+    <button class="fchip"        data-cat="crash"        onclick="setFilter(this,'crash')">Crash</button>
     <button class="fchip"        data-cat="hazard"       onclick="setFilter(this,'hazard')">Hazard</button>
     <button class="fchip"        data-cat="congestion"   onclick="setFilter(this,'congestion')">Congestion</button>
     <button class="fchip"        data-cat="construction" onclick="setFilter(this,'construction')">Construction</button>
@@ -198,20 +194,26 @@
 
 <script>
 // ── Configuration ─────────────────────────────────────────────────────────
-// COtrip API key — the key is sent as a query param per CDOT docs
 var COTRIP_KEY = 'RSP3STM-AB0M1TW-HE3P63Q-TBVEETK';
 
-// COtrip REST API — events feed filtered to the Boulder/Denver/I-25 corridor
-// Bounding box: SW corner (38.8,-105.5) NE corner (40.4,-104.6) covers Boulder, Denver, I-70, I-25
-var COTRIP_EVENTS_URL = 'https://data.cotrip.org/api/v1/events?apiKey=' + COTRIP_KEY;
-var COTRIP_PROXY = 'https://corsproxy.io/?' + encodeURIComponent(COTRIP_EVENTS_URL);
+// !! IMPORTANT: Replace 'YOUR-COTRIP-API-HOST' with the actual host from your
+// COtrip developer portal. Common patterns:
+//   https://data.cotrip.org/api/v1/incidents
+//   https://api.cotrip.org/v1/incidents
+// The feed name is likely "incidents" based on the JSON schema you shared.
+// A CORS proxy is used since the browser can't call this cross-origin directly.
+var COTRIP_BASE  = 'https://data.cotrip.org/api/v1/incidents';
+var COTRIP_URL   = COTRIP_BASE + '?apiKey=' + COTRIP_KEY;
+var COTRIP_PROXY = 'https://corsproxy.io/?' + encodeURIComponent(COTRIP_URL);
+// Bearer token alternative (tried if apiKey param fails):
+var COTRIP_BEARER_URL   = COTRIP_BASE;
+var COTRIP_BEARER_PROXY = 'https://corsproxy.io/?' + encodeURIComponent(COTRIP_BEARER_URL);
 
-// FAA ASWS — no key needed
-var FAA_URL = 'https://services.faa.gov/airport/status/DEN?format=application/json';
+var FAA_URL   = 'https://services.faa.gov/airport/status/DEN?format=application/json';
 var FAA_PROXY = 'https://corsproxy.io/?' + encodeURIComponent(FAA_URL);
 
-// Bounding box for Boulder/Denver metro (used to filter COtrip results)
-var BBOX = { minLat: 38.8, maxLat: 40.4, minLon: -105.5, maxLon: -104.6 };
+// Boulder/Denver metro bounding box
+var BBOX = { minLat: 39.4, maxLat: 40.4, minLon: -105.6, maxLon: -104.6 };
 
 // ── State ─────────────────────────────────────────────────────────────────
 var incidents    = [];
@@ -224,19 +226,20 @@ var lastTime     = null;
 var rafId        = null;
 var totalH       = 0;
 
-// ── Categorize ────────────────────────────────────────────────────────────
-function categorize(type) {
-  if (!type) return 'other';
-  var u = type.toUpperCase();
-  if (/ACCIDENT|CRASH|COLLISION/.test(u))         return 'accident';
-  if (/WEATHER|WIND|SNOW|ICE|FLOOD|FOG|ADVISO/.test(u)) return 'weather';
-  if (/HAZARD|DEBRIS|OBSTACLE|SPILL|ANIMAL|DISABLE|CHAIN|FIRE/.test(u)) return 'hazard';
-  if (/CONGESTION|TRAFFIC|SLOW|JAM|DELAY|HEAVY/.test(u)) return 'congestion';
-  if (/CONSTRUCTION|WORK|CLOSURE|CLOSED|MAINTENANCE|ROAD WORK/.test(u)) return 'construction';
+// ── Categorize — mapped directly to COtrip's "category" field ─────────────
+function categorize(cat, type) {
+  var c = (cat  || '').toUpperCase();
+  var t = (type || '').toUpperCase();
+  var combined = c + ' ' + t;
+  if (/CRASH|ACCIDENT|COLLISION/.test(combined))           return 'crash';
+  if (/WEATHER|WIND|SNOW|ICE|FLOOD|FOG|ADVISO|CHAIN/.test(combined)) return 'weather';
+  if (/HAZARD|DEBRIS|FIRE|SPILL|ANIMAL|DISABLE|OBJECT/.test(combined)) return 'hazard';
+  if (/CONGESTION|SLOW|JAM|DELAY|HEAVY TRAFFIC/.test(combined)) return 'congestion';
+  if (/CONSTRUCTION|ROAD WORK|MAINTENANCE|CLOSURE|WORK ZONE/.test(combined)) return 'construction';
   return 'other';
 }
 
-// ── Formatting ────────────────────────────────────────────────────────────
+// ── Format helpers ─────────────────────────────────────────────────────────
 function fmtDate(str) {
   if (!str) return '';
   var d = new Date(str);
@@ -250,8 +253,24 @@ function titleCase(s) {
   if (!s) return '';
   return s.toLowerCase().replace(/\b\w/g, function(c) { return c.toUpperCase(); });
 }
-function inBbox(lat, lon) {
+function inBbox(coords) {
+  if (!coords || coords.length < 2) return true; // include if no coords
+  var lon = coords[0], lat = coords[1];
   return lat >= BBOX.minLat && lat <= BBOX.maxLat && lon >= BBOX.minLon && lon <= BBOX.maxLon;
+}
+
+// ── Lane closure summary ───────────────────────────────────────────────────
+function laneSummary(laneImpacts) {
+  if (!Array.isArray(laneImpacts)) return '';
+  var closed = [];
+  laneImpacts.forEach(function(li) {
+    if (li.closedLaneTypes && li.closedLaneTypes.length) {
+      li.closedLaneTypes.forEach(function(lt) {
+        closed.push(titleCase(lt) + ' (' + (li.direction || '') + ')');
+      });
+    }
+  });
+  return closed.length ? '⚠ ' + closed.join(', ') + ' closed' : '';
 }
 
 // ── Ticker ────────────────────────────────────────────────────────────────
@@ -289,22 +308,29 @@ function render() {
   var inner = document.getElementById('ticker-inner');
   if (!shown.length) {
     inner.innerHTML = '<div id="empty-state">' +
-      (loading ? '<i class="ti ti-loader spin" style="font-size:26px;"></i> Loading…' : 'No active incidents for this filter.') +
+      (loading ? '<i class="ti ti-loader spin" style="font-size:26px;"></i> Loading…'
+               : 'No active incidents for this filter.') +
       '</div>';
     totalH = 0; return;
   }
   var rowsHTML = shown.map(function(inc) {
-    var type   = inc.type   ? titleCase(inc.type)   : 'Unknown';
-    var road   = inc.road   ? inc.road               : '';
-    var detail = inc.detail ? titleCase(inc.detail)  : '';
+    var sevBadge = '';
+    if (inc.severity === 'major' || inc.severity === 'serious') {
+      sevBadge = '<span class="sev-badge sev-major">MAJOR</span>';
+    } else if (inc.severity === 'minor') {
+      sevBadge = '<span class="sev-badge sev-minor">minor</span>';
+    }
+    var lanes = laneSummary(inc.laneImpacts);
     return '<div class="incident">' +
       '<div class="dot ' + inc.cat + '"></div>' +
       '<div>' +
-        '<div class="inc-type">' + type + '</div>' +
+        '<div class="inc-type">' + titleCase(inc.type) + sevBadge + '</div>' +
         '<div class="inc-meta">' +
-          (road ? '<span><i class="ti ti-road" aria-hidden="true"></i> ' + road + '</span>' : '') +
+          (inc.route ? '<span><i class="ti ti-road" aria-hidden="true"></i> ' + inc.route + '</span>' : '') +
+          (inc.region ? '<span>' + inc.region + '</span>' : '') +
         '</div>' +
-        (detail && detail !== type ? '<div class="inc-detail">' + detail + '</div>' : '') +
+        (inc.msg ? '<div class="inc-msg">' + inc.msg + '</div>' : '') +
+        (lanes    ? '<div class="inc-lanes">' + lanes + '</div>' : '') +
       '</div>' +
       '<div class="inc-date">' + fmtDate(inc.date) + '</div>' +
     '</div>';
@@ -324,31 +350,30 @@ function setFilter(btn, cat) {
   render();
 }
 
-// ── Parse COtrip JSON response ─────────────────────────────────────────────
-function parseCotrip(data) {
-  // COtrip REST API returns { events: [...] } or array directly
-  var events = Array.isArray(data) ? data : (data.events || data.Features || data.features || []);
-  return events
-    .filter(function(e) {
-      // Filter to Boulder/Denver bounding box if coordinates present
-      var lat = e.latitude  || (e.geometry && e.geometry.coordinates && e.geometry.coordinates[1]);
-      var lon = e.longitude || (e.geometry && e.geometry.coordinates && e.geometry.coordinates[0]);
-      if (lat && lon) return inBbox(parseFloat(lat), parseFloat(lon));
-      // If no coords, include if description mentions relevant areas
-      var desc = (e.description || e.headline || '').toUpperCase();
-      return /BOULDER|DENVER|I-25|I-70|US-36|CO-93|CO-119|BROOMFIELD|LONGMONT|ERIE|LAFAYETTE|LOUISVILLE|THORNTON|WESTMINSTER|ARVADA/.test(desc);
+// ── Parse GeoJSON FeatureCollection from COtrip ────────────────────────────
+function parseFeatures(data) {
+  var features = [];
+  if (data && Array.isArray(data.features)) {
+    features = data.features;
+  } else if (Array.isArray(data)) {
+    features = data;
+  }
+  return features
+    .filter(function(f) {
+      var coords = f.geometry && f.geometry.coordinates;
+      return inBbox(coords);
     })
-    .map(function(e) {
-      var typeVal = e.type || e.eventType || e.headline || e.description || '';
-      var road    = e.road || e.roadway || e.location || e.headline || '';
-      var detail  = e.description || e.details || '';
-      var date    = e.created || e.updated || e.startTime || e.start || '';
+    .map(function(f) {
+      var p = f.properties || {};
       return {
-        type:   typeVal,
-        road:   road,
-        detail: detail,
-        date:   date,
-        cat:    categorize(typeVal + ' ' + detail)
+        type:        p.type       || p.category  || 'Unknown',
+        route:       p.routeName  || '',
+        region:      p.region     || '',
+        msg:         p.travelerInformationMessage || '',
+        severity:    (p.severity  || '').toLowerCase(),
+        date:        p.startTime  || p.lastUpdated || '',
+        laneImpacts: p.laneImpacts || [],
+        cat:         categorize(p.category, p.type)
       };
     });
 }
@@ -358,29 +383,25 @@ function loadTraffic() {
   loading = true;
   document.getElementById('record-count').textContent = 'Loading…';
 
-  // Try direct first (in case CDOT enables CORS), then proxy
-  var urls = [COTRIP_EVENTS_URL, COTRIP_PROXY];
+  // Try proxy with apiKey param, then Bearer token via proxy, then direct
+  var attempts = [
+    { url: COTRIP_PROXY,        headers: { 'Accept': 'application/json' } },
+    { url: COTRIP_BEARER_PROXY, headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + COTRIP_KEY } }
+  ];
   var idx = 0;
+
   function tryNext() {
-    if (idx >= urls.length) {
-      // Final fallback: COtrip XML feed via proxy (older API format)
-      var xmlUrl = 'https://data.cotrip.org/xml/alerts.xml?apiKey=' + COTRIP_KEY;
-      var xmlProxy = 'https://corsproxy.io/?' + encodeURIComponent(xmlUrl);
-      fetch(xmlProxy)
-        .then(function(r) { if (!r.ok) throw new Error(); return r.text(); })
-        .then(function(txt) { parseXmlFallback(txt); })
-        .catch(function() {
-          loading = false;
-          document.getElementById('record-count').textContent = 'COtrip data unavailable';
-          document.getElementById('refresh-icon').classList.remove('spin');
-          render();
-        });
-      return;
+    if (idx >= attempts.length) {
+      loading = false;
+      document.getElementById('record-count').textContent = 'COtrip unavailable — check API endpoint in widget';
+      document.getElementById('refresh-icon').classList.remove('spin');
+      render(); return;
     }
-    fetch(urls[idx++], { headers: { 'Accept': 'application/json' } })
+    var attempt = attempts[idx++];
+    fetch(attempt.url, { headers: attempt.headers })
       .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function(data) {
-        incidents = parseCotrip(data);
+        incidents = parseFeatures(data);
         loading = false;
         document.getElementById('record-count').textContent = incidents.length + ' active incidents';
         document.getElementById('updated').textContent =
@@ -393,86 +414,46 @@ function loadTraffic() {
   tryNext();
 }
 
-// ── XML fallback parser ────────────────────────────────────────────────────
-function parseXmlFallback(txt) {
-  try {
-    var parser = new DOMParser();
-    var doc = parser.parseFromString(txt, 'application/xml');
-    var items = doc.querySelectorAll('alert, event, incident, item');
-    var result = [];
-    items.forEach(function(item) {
-      var getText = function(tag) {
-        var el = item.querySelector(tag);
-        return el ? el.textContent.trim() : '';
-      };
-      var typeVal = getText('type') || getText('eventType') || getText('headline') || getText('title') || '';
-      var road    = getText('road') || getText('roadway') || getText('location') || getText('headline') || '';
-      var detail  = getText('description') || getText('details') || getText('summary') || '';
-      var date    = getText('created') || getText('updated') || getText('pubDate') || '';
-      if (typeVal || road) {
-        result.push({ type: typeVal, road: road, detail: detail, date: date, cat: categorize(typeVal + ' ' + detail) });
-      }
-    });
-    incidents = result;
-    loading = false;
-    document.getElementById('record-count').textContent = incidents.length + ' active incidents';
-    document.getElementById('updated').textContent =
-      'Updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    document.getElementById('refresh-icon').classList.remove('spin');
-    render();
-  } catch(e) {
-    loading = false;
-    document.getElementById('record-count').textContent = 'COtrip data unavailable';
-    document.getElementById('refresh-icon').classList.remove('spin');
-    render();
-  }
-}
-
 // ── Airport loader ────────────────────────────────────────────────────────
 function loadAirport() {
   var el = document.getElementById('airport-status');
-  var detail = document.getElementById('airport-detail');
-  el.className = 'loading'; el.textContent = 'Loading…'; detail.textContent = '';
+  var det = document.getElementById('airport-detail');
+  el.className = 'loading'; el.textContent = 'Loading…'; det.textContent = '';
   fetch(FAA_PROXY)
     .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
-    .then(function(d) {
-      var hasDelay = d.delay === 'true' || d.delay === true;
-      if (!hasDelay) {
-        el.className = 'good'; el.textContent = '✓ No delays';
-        detail.textContent = d.weather && d.weather.weather ? d.weather.weather.Temp + ' · ' + d.weather.weather.Weather : '';
-      } else {
-        var reason = (d.status && d.status.reason) ? d.status.reason : 'Delay in effect';
-        var avg = (d.status && d.status.avgDelay) ? ' · avg ' + d.status.avgDelay : '';
-        el.className = 'delay'; el.textContent = '⚠ Delay';
-        detail.textContent = reason + avg;
-      }
-    })
+    .then(function(d) { applyAirport(d, el, det); })
     .catch(function() {
       fetch(FAA_URL)
         .then(function(r) { return r.json(); })
-        .then(function(d) {
-          var hasDelay = d.delay === 'true' || d.delay === true;
-          el.className = hasDelay ? 'delay' : 'good';
-          el.textContent = hasDelay ? '⚠ Delay' : '✓ No delays';
-          detail.textContent = hasDelay && d.status ? d.status.reason || '' : '';
-        })
-        .catch(function() {
-          el.className = 'loading'; el.textContent = 'DEN status unavailable';
-        });
+        .then(function(d) { applyAirport(d, el, det); })
+        .catch(function() { el.className = 'loading'; el.textContent = 'DEN status unavailable'; });
     });
+}
+function applyAirport(d, el, det) {
+  var hasDelay = d.delay === 'true' || d.delay === true;
+  if (!hasDelay) {
+    el.className = 'good'; el.textContent = '✓ No delays';
+    det.textContent = (d.weather && d.weather.weather)
+      ? (d.weather.weather.Temp || '') + ' · ' + (d.weather.weather.Weather || '')
+      : '';
+  } else {
+    el.className = 'delay'; el.textContent = '⚠ Delay';
+    var reason = (d.status && d.status.reason) ? d.status.reason : '';
+    var avg    = (d.status && d.status.avgDelay) ? ' · avg ' + d.status.avgDelay : '';
+    det.textContent = reason + avg;
+  }
 }
 
 function doRefresh() {
   document.getElementById('refresh-icon').classList.add('spin');
   incidents = []; render();
-  loadTraffic();
-  loadAirport();
+  loadTraffic(); loadAirport();
 }
 
 loadTraffic();
 loadAirport();
-setInterval(loadTraffic, 300000);   // every 5 min
-setInterval(loadAirport, 600000);   // every 10 min
+setInterval(loadTraffic, 300000);
+setInterval(loadAirport, 600000);
 </script>
 </body>
 </html>
