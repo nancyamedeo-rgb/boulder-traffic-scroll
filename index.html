@@ -246,6 +246,8 @@ var FEEDS = {
   wz:   { url: BASE + 'workZones',          label: 'WZ',   loaded: false }
 };
 
+var FAA_NAS_URL   = 'https://nasstatus.faa.gov/api/airport-status-information';
+var FAA_NAS_PROXY = 'https://corsproxy.io/?' + encodeURIComponent(FAA_NAS_URL);
 var FAA_URL   = 'https://services.faa.gov/airport/status/DEN?format=application/json';
 var FAA_PROXY = 'https://corsproxy.io/?' + encodeURIComponent(FAA_URL);
 
@@ -570,15 +572,28 @@ function loadAirport() {
   var el  = document.getElementById('airport-status');
   var det = document.getElementById('airport-detail');
   el.className = 'loading'; el.textContent = 'Loading…'; det.textContent = '';
-  fetch(FAA_PROXY)
-    .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
-    .then(function(d) { applyAirport(d, el, det); })
-    .catch(function() {
-      fetch(FAA_URL)
-        .then(function(r) { return r.json(); })
-        .then(function(d) { applyAirport(d, el, det); })
-        .catch(function() { el.className = 'loading'; el.textContent = 'DEN status unavailable'; });
-    });
+  fetch(FAA_NAS_PROXY)
+    .then(function(r) { if (!r.ok) throw new Error(); return r.text(); })
+    .then(function(txt) { applyNasStatus(txt, 'DEN', 'KDEN', el, det); })
+    .catch(function() { el.className = 'loading'; el.textContent = 'DEN status unavailable'; });
+}
+
+function applyNasStatus(txt, iata, icao, el, det) {
+  var re = new RegExp('\\b(' + iata + '|' + icao + ')\\b', 'i');
+  var hasAirport = re.test(txt);
+  if (!hasAirport) {
+    el.className = 'good'; el.textContent = '✓ No delays';
+    det.textContent = iata + ' — no NAS advisories';
+    return;
+  }
+  var lines = txt.split('\n').filter(function(l) { return re.test(l); });
+  var isStop  = lines.some(function(l) { return /ground stop/i.test(l); });
+  var isDelay = lines.some(function(l) { return /ground delay|delay program/i.test(l); });
+  if (isStop)       { el.className = 'ground'; el.textContent = '✈ Ground Stop'; }
+  else if (isDelay) { el.className = 'delay';  el.textContent = '⚠ Ground Delay'; }
+  else              { el.className = 'delay';  el.textContent = '⚠ Advisory'; }
+  var summary = (lines[0] || '').trim().replace(/\s+/g, ' ');
+  det.textContent = summary.length > 100 ? summary.slice(0, 100) + '…' : summary;
 }
 function applyAirport(d, el, det) {
   var hasDelay = d.delay === 'true' || d.delay === true;
